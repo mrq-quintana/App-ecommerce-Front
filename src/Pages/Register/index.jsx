@@ -27,7 +27,6 @@ const Register = () =>{
         }
     })
     const [image,setImage] = useState(null);
-
     const handleInputChange = (e) =>{
         setInput((prev) => ({
             ...prev,
@@ -42,7 +41,6 @@ const Register = () =>{
     }
     const handleSubmit = (e) =>{
         e.preventDefault();
-        console.log(input);
         let error = false
         Object.keys(input).forEach(key => {
             if (input[key].value.length === 0) {
@@ -66,18 +64,16 @@ const Register = () =>{
             form.append('profilePic',image)
             sessionService.register({body:form,callbackSuccess:callbackSuccessRegister,callbackError:callbackErrorRegister})
         }
-        
     }
     useEffect(()=>{
         console.log(image);
     },[image])
-
     /*CALLBACKS */
     const callbackSuccessRegister = (response) =>{
         if(response.data.error){
             Swal.fire({
                 icon:"error",
-                title:"No fue posible el registro",
+                title:"No se ha podido registrar",
                 text:response.data.error,
                 timer:2000
             }).then(result=>{
@@ -102,9 +98,17 @@ const Register = () =>{
     }
     const callbackErrorRegister = (response) =>{
         console.log(response.data);
+        Swal.fire({
+            icon:"error",
+            title:'Usuario ya existe',
+            text:"Pruebe identificarse",
+            timer:2000
+        }).then(result=>{
+            window.location.replace('/login')
+        })
     }
     return(<div>
-        <p>Registrate</p>
+        <div>Registrate</div>
         <form>
             <label>Nombre</label>
             <input name="first_name" value={input.first_name.value} onChange={handleInputChange}/>

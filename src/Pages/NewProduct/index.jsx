@@ -1,5 +1,5 @@
-import { useState , useEffect } from "react";
-import Swal from 'sweetalert2';
+import { useState } from "react";
+import Swal from "sweetalert2";
 import MainContainer from "../../components/layout/MainContainer";
 import { productsService } from "../../services";
 
@@ -24,7 +24,8 @@ const NewProduct = (props) => {
         stock: {
             value: 0,
             error: "",
-        }
+        },
+
     })
     let [thumbnail, setThumbnail] = useState(null);
     const handleInputChange = (e) => {
@@ -65,44 +66,24 @@ const NewProduct = (props) => {
             productsService.createProduct({ body: form, callbackSuccess:callbackSuccessCreateProduct, callbackError:callbackErrorCreateProduct})
         }
     }
-    useEffect(()=>{
-        console.log(thumbnail);
-    },[thumbnail])
-
-
     /*CALLBACKS*/
     const callbackSuccessCreateProduct = (response) =>{
-        console.log(response.data)
-        if(response.data.error){
-            Swal.fire({
-                icon:"error",
-                title:"Cannot Register",
-                text:response.data.error,
-                timer:2000
-            }).then(result=>{
-                Object.keys(input).forEach(key=>setInput(prev=>({
-                    ...prev,
-                    [key]:{
-                        error:'',
-                        value:''
-                    }
-                })))
-            })
-        }else{
-            Swal.fire({
-                icon:"success",
-                title:'Producto Registrado',
-                text:"Ingreso correcto",
-                timer:2000
-            })
-            // .then(result=>{
-            //     window.location.replace('/newproduct')
-            // })
-        }
+        Swal.fire({
+            title:"Producto agregado",
+            icon:"success",
+            text:"El producto se ha agregado con éxito",
+            timer:3000
+        }).then(result=>{
+            window.location.replace('/')
+        })
     }
     const callbackErrorCreateProduct = (error) =>{
-        console.log("error");
-        
+        Swal.fire({
+            title:"Error de agregación",
+            icon:"error",
+            text:"El producto no pudo agregarse correctamente, revisar conexión o formato",
+            timer:3000
+        })
     }
     return <>
         <MainContainer>

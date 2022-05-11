@@ -59,7 +59,7 @@ const Chat = () => {
                         usersConnected ? Object.keys(usersConnected).slice(0, 10).map(key => {
                             return <div className="userCard">
                                 <div style={{ paddingTop: "10px", marginRight: "10px" }}>
-                                    <img alt={1} className="thumbnail" src={usersConnected[key].thumbnail} />
+                                    <img className="thumbnail" src={usersConnected[key].thumbnail} />
                                 </div>
                                 <div style={{ display: "inline-block" }}>
                                     <p>{usersConnected[key].name}</p>
@@ -74,7 +74,7 @@ const Chat = () => {
                     <div style={{ overflowY: "auto" }} id="logsDiv">
                         {
                             logs?logs.map(message=><div style={{display:"flex"}}>
-                                <img alt={1} className="thumbnail_chat" src={message.author.profile_picture} key={message.author}></img>
+                                <img className="thumbnail_chat" src={message.author.profile_picture}></img>
                                 <p>{message.content}</p>
                             </div>):null
                         }

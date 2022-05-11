@@ -13,9 +13,16 @@ export default class CartsService{
         const data = {url:`${process.env.REACT_APP_BASE_URL}${process.env.REACT_APP_ADD_PRODUCT_TO_CART}${cid}/products/${pid}`,body,config:getAuthHeaders(),callbackSuccess,callbackError};
         this.httpClient.makePostRequest(data);
     }
-    deleteCartById = ({cid,body,callbackSuccess,callbackError}) =>{
-        console.log(`${process.env.REACT_APP_BASE_URL}${process.env.REACT_APP_REMOVE_CART}${cid}`)
-        const data = {url:`${process.env.REACT_APP_BASE_URL}${process.env.REACT_APP_REMOVE_CART}${cid}`,body,config:getAuthHeaders(),callbackSuccess,callbackError};
+    deleteProductFromCart = ({cid,pid,callbackSuccess,callbackError}) =>{
+        const data = {url:`${process.env.REACT_APP_BASE_URL}${process.env.REACT_APP_DELETE_PRODUCT_FROM_CART}${cid}/products/${pid}`,config:getAuthHeaders(),callbackSuccess,callbackError};
+        this.httpClient.makeDeleteRequest(data);
+    }
+    updateCart = ({cid,body,callbackSuccess,callbackError})=>{
+        const data = {url:`${process.env.REACT_APP_BASE_URL}${process.env.REACT_APP_UPDATE_CART}${cid}`,config:getAuthHeaders(),body,callbackSuccess,callbackError};
+        this.httpClient.makePutRequest(data);
+    }
+    finishPurchase = ({cid,body,callbackSuccess,callbackError})=>{
+        const data = {url:`${process.env.REACT_APP_BASE_URL}${process.env.REACT_APP_CONFIRM_PURCHASE}${cid}`,config:getAuthHeaders(),body,callbackSuccess,callbackError};
         this.httpClient.makePostRequest(data);
     }
 }

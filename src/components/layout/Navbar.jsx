@@ -21,7 +21,7 @@ const Navbar = (props) => {
     return <>
         <div className="navbar">
             <div className="navbarBrand">
-                <img alt={1} src={MainLogo} />
+                <img src={MainLogo} />
             </div>
             <div style={{ width: "100%", display: "flex", alignItems: "center" }}>
                 <div className="navbarMenu">
@@ -31,9 +31,10 @@ const Navbar = (props) => {
             <div className="navbarProfile ">
                 <div>
                     <div className="dropdown">
-                        <img alt={1} src={currentUser.profile_picture ? currentUser.profile_picture: AdminIcon} className={currentUser.role==="superadmin"?"mainIcon":"userIcon"} />
+                        <img src={currentUser.profile_picture ? currentUser.profile_picture: AdminIcon} className={currentUser.role==="superadmin"?"mainIcon":"userIcon"} />
                         <div className="dropdownContent">
                             <button className="dropdownButton" onClick={logout}>Cerrar sesión</button>
+                            <button className="dropdownButton">Configuración</button>
                         </div>
                     </div>
                 </div>

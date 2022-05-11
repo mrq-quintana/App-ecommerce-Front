@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import Swal from "sweetalert2";
 import MainContainer from "../../components/layout/MainContainer";
 import { useNavigate } from "react-router-dom";
@@ -11,34 +11,34 @@ const ProductDescription = (props) => {
     let [quantity, setQuantity] = useState(1);
     let [currentCart, setCurrentCart] = useState(null);
     let [updating, setUpdating] = useState(false);
-    let [input,setInput] = useState({
-        title:'',
-        description:'',
-        price:0,
-        stock:0,
-        code:0,
-        
+    let [input, setInput] = useState({
+        title: '',
+        description: '',
+        price: 0,
+        stock: 0,
+        code: 0
     })
     let currentUser = JSON.parse(localStorage.getItem('user'));
-    useNavigate();
-    // console.log(currentUser);
     useEffect(() => {
         let pid = params.pid;
         productsService.getProductById({ pid: pid, callbackSuccess: callbackSuccessGetProductById, callbackError: callbackErrorGetProductById });
     }, [])
-    useEffect(()=>{
-        if(currentUser&&currentUser.role!=="superadmin"&&!currentCart){
-            // console.log(currentUser);
+    useEffect(() => {
+        if (currentUser && currentUser.role !== "superadmin" && !currentCart) {
+            console.log(currentUser);
             cartService.getCartById({ cid: currentUser.cart, callbackSuccess: callbackSuccessGetCartById, callbackError: callbackErrorGetCartById });
         }
-    },[currentUser])
-    useEffect(()=>{
-        if(product){
+    }, [currentUser])
+    useEffect(() => {
+        if (product&&!updating) {
             setInput({
                 ...product
             })
         }
-    },[product])
+    }, [product])
+    useEffect(()=>{
+        console.log(input);
+    },[input])
     const addProduct = () => {
         if (quantity <= 0) {
             Swal.fire({
@@ -52,119 +52,143 @@ const ProductDescription = (props) => {
         let pid = params.pid;
         cartService.addProductToCart({ cid: currentUser.cart, pid: pid, body: { quantity }, callbackSuccess: callbackSuccessAddProductToCart, callbackError: callbackErrorAddProductToCart });
     }
-    const finishShop = () =>{
-        cartService.deleteCartById({ cid: currentUser.cart, body: { quantity }, callbackSuccess: callbackSuccessDeleteCart, callbackError: callbackErrorDeleteCart });
-    }
     const changeFromThumbnail = (product) => {
         window.location.replace('/products/' + product._id)
     }
     const setUpdate = () => {
         setUpdating(true);
-     }
-     const handleInputChange = (e) => {
-        setInput((prev) => ({
-            ...prev,
-            [e.target.name]: {
-                value: e.target.value,
-                error: null
-            }
-        }))
     }
-    const Update = (e) => {
-        e.preventDefault();
-        let error = false
-        Object.keys(input).forEach(key => {
-            if (input[key].value === 0) {
-                error = true;
-                setInput((prev) => ({
-                    ...prev,
-                    [key]: {
-                        ...prev[key],
-                        error: "Completar este campo"
-                    }
-                }))
+    const handleInputChange = (e) =>{
+        setInput(prev=>({...prev,[e.target.name]:e.target.value}))
+    }
+    const cancelUpdate = () =>{
+        setUpdating(false);
+        setInput({...product}) 
+    }
+    const confirmChanges = () =>{
+        Swal.fire({
+            title: "¿Actualizar producto?",
+            icon:"question",
+            text: "Todos los usuarios podrán ver el producto y sus cambios",
+            showConfirmButton: true,
+            confirmButtonText: "Actualizar producto",
+            confirmButtonColor: "green",
+            showCancelButton: true,
+            cancelButtonText: "Cancelar",
+            cancelButtonColor: "red"
+        }).then(result=>{
+            if(result.isConfirmed){
+                productsService.updateProduct({pid:product._id,body:input,callbackSuccess:callbackSuccessUpdateProduct,callbackError:callbackErrorUpdateProduct});
             }
         })
-        if (!error){
-            let pid = params.pid;
-            let form = new FormData();
-            form.append('title', input.title.value);
-            form.append('description', input.description.value);
-            form.append('code', input.code.value);
-            form.append('stock', input.stock.value);
-            form.append('price', input.price.value);
-            productsService.updateProduct({pid:pid,body:form, callbackSuccess:callbackSuccessUpdateCart, callbackError:callbackErrorUpdateCart})
-        }
+    }
+    const deleteProduct = () =>{
+        Swal.fire({
+            title: "¿Eliminar producto?",
+            icon:"warning",
+            text: "Esta acción es irreversible",
+            showConfirmButton: true,
+            confirmButtonText: "Aceptar",
+            confirmButtonColor: "green",
+            showCancelButton: true,
+            cancelButtonText: "Cancelar",
+            cancelButtonColor: "red"
+        }).then(result=>{
+            if(result.isConfirmed){
+                productsService.deleteProduct({pid:product._id,callbackSuccess:callbackSuccessDeleteProduct,callbackError:callbackErrorDeleteProduct});
+            }
+        })
     }
     /*CALLBACKS */
     const callbackSuccessGetProductById = (result) => {
-        // console.log(result.data.payload);
+        console.log(result.data.payload);
         setProduct(result.data.payload);
     }
     const callbackErrorGetProductById = (error) => {
         console.log(error);
     }
     const callbackSuccessGetCartById = (result) => {
-        // console.log(result.data.payload);
+        console.log(result.data.payload);
         setCurrentCart(result.data.payload.products);
     }
     const callbackErrorGetCartById = (error) => {
         console.log(error);
     }
     const callbackSuccessAddProductToCart = (result) => {
-        // console.log(result.data);
-        Swal.fire({
-            icon: "success",
-            title: "Operación exitosa",
-            text: "El producto se ha agregado a su carrito",
-            timer:5000
-        })
-        setTimeout(function(){
-            window.location.replace('/')
-        }, 2000);
+        console.log(result.data);
+        if(result.data.quantityChanged){
+            Swal.fire({
+                icon: "success",
+                title: "Hubo un cambio en el número de ejemplares",
+                text: `El stock del producto cambió durante el proceso, sólo se han podido añadir ${result.data.newQuantity} ejemplares del producto`,
+                timer:3000
+            }).then(result=>{
+                window.location.replace('/');
+            })
+        }
+        else{
+            Swal.fire({
+                icon: "success",
+                title: "¡Producto añadido con éxito!",
+                text: `Se han añadido ${result.data.newQuantity} ejemplares al carrito`,
+                timer:2000
+            }).then(result=>{
+                window.location.replace('/');
+            })
+        }
+
     }
     const callbackErrorAddProductToCart = (error) => {
         console.log(error);
     }
-    const callbackSuccessDeleteCart = (result) => {
-        // console.log(result.data);
+    const callbackSuccessUpdateProduct = (response) =>{
+        productsService.getProductById({ pid: product._id, callbackSuccess: callbackSuccessGetProductById, callbackError: callbackErrorGetProductById });
+        setUpdating(false);
         Swal.fire({
-            icon: "success",
-            title: "Compra finalizada",
-            text: "Revise su correo",
+            icon:"success",
+            title:"Producto actualizado",
+            text:"El producto se ha actualizado con éxito",
+            timer:2000
         })
-        window.location.replace('/');
     }
-    const callbackErrorDeleteCart = (error) => {
-        console.log(error);
-    }
-    const callbackSuccessUpdateCart = (result) => {
-        // console.log(result.data);
+    const callbackErrorUpdateProduct = (error) =>{
         Swal.fire({
-            icon: "success",
-            title: "Producto actualizado",
-            text: "Correctamente",
-            timer:5000
+            icon:"error",
+            title:"Error al actualizar producto",
+            text:"Ha habido un error al actualizar producto.",
+            timer:2000
         })
-        setTimeout(function(){
+    }
+    const callbackSuccessDeleteProduct = response =>{
+        Swal.fire({
+            title:"Producto eliminado",
+            text:"El producto se eliminó correctamente",
+            icon:"success",
+            timer:2000
+        }).then(result=>{
             window.location.replace('/')
-        }, 2000);
+        })
     }
-    const callbackErrorUpdateCart = (error) => {
+    const callbackErrorDeleteProduct = error=>{
         console.log(error);
+        Swal.fire({
+            title:"No eliminado",
+            text:"El producto no pudo eliminarse, revisar cambios",
+            icon:"error",
+            timer:1000
+        })
     }
     return (<MainContainer>
         <div className="customRow">
             <div className="customColumn1">
                 <div className="imagePanel">
-                    <img alt={1} src={product && product.thumbnail} ></img>
+                    <img src={product && product.thumbnail}></img>
                 </div>
             </div>
             <div className="customColumn2">
                 <div className="descriptionPanel">
                     <p style={{ fontSize: "35px" }}>{product && product.title}</p>
                     <p style={{ fontSize: "20px" }}>{product && product.description}</p>
-                    <p style={{ fontSize: "20px" }}>Stock: {product && product.stock}</p>
                     <p style={{ fontSize: "40px" }}>$ {product && product.price}<span style={{ fontSize: "15px", position: "relative", bottom: "20px" }}>00</span></p>
                 </div>
             </div>
@@ -177,13 +201,23 @@ const ProductDescription = (props) => {
                                 <p style={{ fontSize: "15px" }}>La entrega de este producto corre por cuenta de CoderHouse en <span style={{ color: "blue" }}>3 días hábiles</span></p>
                                 <p style={{ fontSize: "13px", textAlign: "left" }}>¿Necesitas este producto con entrega inmediata? <span className="spanPlan">Cambia tu plan a premium</span></p>
                                 <br />
-                                <p>{product ? product.status ? product.status === "available" ? <span style={{ color: "green" }}>Aún con disponibilidad</span> : <span style={{ color: "red" }}>Sin disponibilidad</span> : null : null}</p>
-                                <label>Cantidad : </label>
-                                <input type="number" value={quantity} onChange={(e) => setQuantity(e.target.value)}></input>
-                                <br />
-                                <br />
+                                <p>{product ? product.status ? product.status === "available" || product.stock > 0 ? <span style={{ color: "green" }}>Aún con disponibilidad</span> : <span style={{ color: "red" }}>Sin disponibilidad</span> : null : null}</p>
+
                                 {
-                                    <button className="addToCartButton" onClick={addProduct}>Agregar al carrito</button> 
+                                    currentCart ? currentCart.some(prod => prod.product._id === product._id) ? <>
+                                        <p>El producto ya está en el carrito</p>
+                                        <button className="addToCartButton" onClick={()=>window.location.replace('/cart')}>Ver carrito</button>
+                                    </> :
+                                        <>
+                                            <br />
+                                            {product && <p>Disponibles: {product.stock} piezas</p>}
+                                            <label>Cantidad : </label>
+                                            <input type="number" onKeyDown={(e) => e.preventDefault()} max={product ? product.stock : 10} value={quantity} onChange={(e) => setQuantity(e.target.value)}></input>
+                                            <br />
+                                            <br />
+                                            {product?product.stock>0?<button className="addToCartButton" onClick={addProduct}>Agregar al carrito</button>:<p>Producto fuera de stock, pronto volveremos con más piezas</p>:null}
+                                        </>
+                                        : null
                                 }
                             </div>
                         </div>
@@ -192,10 +226,9 @@ const ProductDescription = (props) => {
                                 <p style={{ fontSize: "11px" }}>Productos en tu carrito hasta el momento:</p>
                                 {
                                     currentCart ? currentCart.length === 0 ? <p style={{ fontSize: "11px" }}>No tienes productos en este carrito aún</p> :
-                                        currentCart.slice(0, 3).map(product => <><img onClick={() => changeFromThumbnail(product.product)} src={product.product.thumbnail} className="thumbnail" alt={product.product.title} /></>
-                                        ) : null
+                                        currentCart.slice(0, 3).map(product => <><img onClick={() => changeFromThumbnail(product.product)} src={product.product.thumbnail} className="thumbnail" /></>) : null
                                 }
-                                <button className="addToCartButton" onClick={finishShop} style={{ fontSize: "10px", padding: "5px", width: "55%" }}>Ver carrito completo</button>
+                                <button className="addToCartButton" onClick={()=>window.location.replace('/cart')} style={{ fontSize: "10px", padding: "5px", width: "55%" }}>Ver carrito completo</button>
                             </div>
                         </div>
                     </>
@@ -214,28 +247,27 @@ const ProductDescription = (props) => {
                                         </div>
                                         <div style={{ textAlign: "center", marginTop: "40px" }}>
                                             <button className="addToCartButton" onClick={setUpdate}>Actualizar</button>
+                                            <button className="addToCartButton" onClick={deleteProduct}>Eliminar producto</button>
                                         </div>
                                     </div>
                                     :
                                     <div>
-                                        <form>
                                         <p style={{ fontSize: "25px", textAlign: "center" }}>Actualizar producto</p>
-                                        <div style={{textAlign:"center"}}>
-                                        <label>Nombre del producto</label>
-                                        <input value={input.title.value} name="title" onChange={handleInputChange} />
-                                        <label>Precio del producto</label>
-                                        <input value={input.price.value} name="price" type="number" onChange={handleInputChange} />
-                                        <label>Descripción</label>
-                                        <textarea value={input.description.value} name="description" onChange={handleInputChange} />
-                                        <label>Código</label>
-                                        <input value={input.code.value} name="code" onChange={handleInputChange} />
-                                        <label>Stock</label>
-                                        <input value={input.stock.value} name="stock" type="number" onChange={handleInputChange} />
+                                        <div style={{ textAlign: "center" }}>
+                                            <label>Nombre del producto: </label>
+                                            <input name="title" value={input.title} onChange={handleInputChange}></input>
+                                            <label>Descripción del producto:</label>
+                                            <textarea name="description" value={input.description} onChange={handleInputChange}></textarea>
+                                            <label>Precio</label>
+                                            <input type="number" min="0" name="price" value={input.price} onChange={handleInputChange}></input>
+                                            <p>Código: {product.code}</p>
+                                            <label>Stock: </label>
+                                            <input type="number" min="0" name="stock" value={input.stock} onChange={handleInputChange}/>
                                         </div>
-                                        <div style={{ textAlign: "center", marginTop: "40px" }}>
-                                            <button className="addToCartButton" onClick={Update}>Actualizar</button>
+                                        <div>
+                                            <button onClick={confirmChanges}>Confirmar</button>
+                                            <button onClick={cancelUpdate}>Cancelar</button>
                                         </div>
-                                    </form>
                                     </div>
                             }
                         </div>

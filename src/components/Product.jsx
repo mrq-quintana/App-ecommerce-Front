@@ -5,7 +5,7 @@ const Product = ({ element }) => {
     return <div className="productCard">
         <p>{element.title}</p>
         <div className="imageHolder">
-            <img alt={1} src={element.thumbnail} />
+            <img src={element.thumbnail} />
         </div>
         <p>$ {element.price}<span style={{ fontSize: "5px", position: "relative", bottom: "8px" }}>00</span></p>
 

@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { sessionService } from '../../services';
-import {useNavigate} from 'react-router-dom'
-import Swal from "sweetalert2";
-
+import { sessionService } from '../../services/';
+import {Link, useNavigate} from 'react-router-dom'
+import Swal from 'sweetalert2';
 const Login = () => {
     let navigate = useNavigate();
     let [input, setInput] = useState({
@@ -27,8 +26,6 @@ const Login = () => {
     }
     const handleSubmit = (e) => {
         e.preventDefault();
-        console.log(input);
-        
         let error = false
         Object.keys(input).forEach(key => {
             if (input[key].value.length === 0) {
@@ -55,24 +52,35 @@ const Login = () => {
             let user = response.data.payload.user;
             localStorage.setItem('sessionToken',response.data.payload.token)
             localStorage.setItem('user',JSON.stringify(user));
+            console.log(user)
+            Swal.fire({
+                icon: "success",
+                title: "Bienvenido",
+                text: user.first_name? user.first_name +' '+ user.last_name : "Administrador",
+                timer:5000
+            })
+    
+            setTimeout(function(){
+                window.location.replace('/')
+            }, 2000);
         }else if(process.env.REACT_APP_AUTHENTICATION_MODE==="COOKIE"){
             let user = response.data.payload.user;
             localStorage.setItem('user',JSON.stringify(user));
+            console.log(user)
+            Swal.fire({
+                icon: "success",
+                title: "Bienvenido",
+                text: user.first_name? user.first_name +' '+ user.last_name : "Administrador",
+                timer:5000
+            })
+    
+            setTimeout(function(){
+                window.location.replace('/')
+            }, 2000);
         }
-       let userLocal = JSON.parse(localStorage.getItem('user')); 
-        Swal.fire({
-            icon: "success",
-            title: "Bienvenido",
-            text: userLocal.first_name? userLocal.first_name +' '+ userLocal.last_name : "Administrador",
-            timer:5000
-        })
-
-        setTimeout(function(){
-            window.location.replace('/')
-        }, 2000);
-
     }
     const callbackErrorLogin = (error) =>{
+        console.log(error)
         Swal.fire({
             icon: "error",
             title: "Usuario no registrado",
@@ -82,7 +90,6 @@ const Login = () => {
         setTimeout(function(){
             window.location.replace('/register')
         }, 2000);
-        
     }
     return <>
         <div>
@@ -100,6 +107,7 @@ const Login = () => {
                     <button onClick={handleSubmit}>Ingresar</button>
                 </div>
             </form>
+            <p>¿Eres nuevo? <Link to="/register">Da click aquí para registrarte</Link></p>
         </div>
     </>
 }
